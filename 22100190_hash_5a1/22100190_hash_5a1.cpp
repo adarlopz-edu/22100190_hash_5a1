@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <cstdlib>
 using namespace std;
 
 struct Persona {
@@ -10,15 +11,16 @@ struct Persona {
     int edad;
 };
 
-struct Lista {
+struct NodoLista {
     Persona persona;
-    Lista* siguienteElemento;
+    int siguiente;
 };
 
 class MetodoHash {
 private:
-    string preguntaOpcion;
-    Lista* tablaHash[113]; 
+    NodoLista lista[100];
+    int tablaHash[113];
+    int siguienteLibre;
 
 public:
     MetodoHash();
@@ -29,21 +31,19 @@ public:
 
 MetodoHash::MetodoHash() {
     for (int i = 0; i < 113; ++i) {
-        tablaHash[i] = 0; //todas las posiciones se van a cero
+        tablaHash[i] = -1;
     }
+    siguienteLibre = 0;
 }
 
 void MetodoHash::ingresarDatos(Persona& persona) {
-    cout << endl << "METODO DE ORDENACION POR HASH" << endl;
+    cout << endl << "BUSQUEDA SECUENCIAL" << endl;
     cout << "a) Introducir datos" << endl << "b) Buscar" << endl << "c) Salir" << endl;
     cout << "Cual es tu opcion? ";
+    char preguntaOpcion;
     cin >> preguntaOpcion;
 
-    for (char& c : preguntaOpcion) {
-        c = tolower(c);
-    }
-
-    if (preguntaOpcion == "a") {
+    if (preguntaOpcion == 'a') {
         cout << endl << "Ingresa tu registro: ";
         cin >> persona.registro;
 
@@ -59,61 +59,60 @@ void MetodoHash::ingresarDatos(Persona& persona) {
         cin >> persona.edad;
         Hash(persona);
     }
-    if (preguntaOpcion == "b") {
-         cout << endl << "Ingresa un registro a buscar: ";
-         cin >> persona.registro;
-         buscarElemento(persona.registro);
+    else if (preguntaOpcion == 'b') {
+        cout << endl << "Ingresa un registro a buscar: ";
+        int registro;
+        cin >> registro;
+        buscarElemento(registro);
     }
-    if (preguntaOpcion == "c") {
+    else if (preguntaOpcion == 'c') {
         exit(1);
     }
 }
 
 void MetodoHash::buscarElemento(int registro) {
-    int indice = registro % 113;
-    Lista* elemento = tablaHash[indice];
+    bool encontrado = false;
 
-    if (elemento == 0) {
-        cout << "No se encontro ningun elemento en la tabla" << endl;
-        return;
-    }
-
-    // busqueda secuencial posicion por posicion con los punteros de la estructura
-    for (Lista* actual = elemento; actual != 0; actual = actual->siguienteElemento) {
-        if (actual->persona.registro == registro) {
-            cout << "Registro: " << actual->persona.registro << endl;
-            cout << "Nombre: " << actual->persona.nombre << endl;
-            cout << "Apellido: " << actual->persona.apellido << endl;
-            cout << "Edad: " << actual->persona.edad << endl;
-            return;
+    for (int i = 0; i < siguienteLibre; ++i) {
+        if (lista[i].persona.registro == registro) {
+            cout << "Registro: " << lista[i].persona.registro << endl;
+            cout << "Nombre: " << lista[i].persona.nombre << endl;
+            cout << "Apellido: " << lista[i].persona.apellido << endl;
+            cout << "Edad: " << lista[i].persona.edad << endl << endl;
+            encontrado = true;
         }
     }
-    cout << "No se encontro ningun elemento en la tabla" << endl;
-}
 
+    if (!encontrado)
+        cout << "Registro no encontrado" << endl;
+}
 
 void MetodoHash::Hash(Persona persona) {
     int indice = persona.registro % 113;
 
-    // aqui es para crear un nuevo espacio en la lista en caso de colision se declaran antes de
-    Lista* nuevoElemento = new Lista;
-    nuevoElemento->persona = persona;
-    nuevoElemento->siguienteElemento = 0;
+    // nuevo nodo para el elemento
+    NodoLista* nuevoNodo = new NodoLista;
+    nuevoNodo->persona = persona;
+    nuevoNodo->siguiente = -1; // por defecto no hay ningun elemento
 
-    // si en la posicion hay un cero esta vacia, ahi se coloca el elemento
-    if (tablaHash[indice] == 0) {
-        tablaHash[indice] = nuevoElemento;
+    // Si la posición esta vacía, simplemente asigna el nuevo nodo
+    if (tablaHash[indice] == -1) {
+        tablaHash[indice] = siguienteLibre;
+        lista[siguienteLibre] = *nuevoNodo; // guarda en el nuevo nodo
+        siguienteLibre++;
     }
     else {
-        // si ya hay algo en el espacio que se declaro arriba ahi es donde se posicinara el elemento
-        Lista* i = tablaHash[indice];
-        while (i->siguienteElemento != 0) {
-            i = i->siguienteElemento;
+        // en caso de colision
+        int posicion = tablaHash[indice];
+        while (lista[posicion].siguiente != -1) {
+            posicion = lista[posicion].siguiente;
         }
-        i->siguienteElemento = nuevoElemento; // añade el elemento al final de la lista en esa misma posicion en la tabla
+        // añade en la siguiente posicion de la lista que este libre
+        lista[posicion].siguiente = siguienteLibre;
+        lista[siguienteLibre] = *nuevoNodo; // guarda
+        siguienteLibre++;
     }
 }
-
 
 int main() {
     MetodoHash ordenamiento;
